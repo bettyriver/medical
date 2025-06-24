@@ -372,7 +372,7 @@ def estimate_se_from_samplesize(data_type, value, sample_size,rater=None):
         se = np.sqrt(1/sample_size + value**2/(2*sample_size))
     
     if data_type == 'CV':
-        se = np.sqrt(1/(2*(sample_size - 1)))
+        se = np.sqrt(1/(2*(sample_size - 1))) * 100 # percentage
     
     if data_type == 'Kappa':
         se = (1- value**2)/np.sqrt(sample_size)
