@@ -8,6 +8,8 @@ Created on Sun Jun 22 11:44:58 2025
 import numpy as np
 from statsmodels.stats.meta_analysis import combine_effects
 import pandas as pd
+import scipy.stats as stats
+from scipy.stats import norm
 
 def random_effect_model(df,value_cname,se_cname,study_cname='Number'):
     '''
@@ -49,16 +51,20 @@ def random_effect_model(df,value_cname,se_cname,study_cname='Number'):
         
         meta_result = combine_effects(effect=effects, variance=variances, method_re="dl")
         summary_df = meta_result.summary_frame()
-        pooled_cv = summary_df.loc['random effect', 'eff']
-        pooled_sd = summary_df.loc['random effect', 'sd_eff']
+        if len(effects)<=3:
+            pooled_cv = summary_df.loc['fixed effect', 'eff']
+            pooled_sd = summary_df.loc['fixed effect', 'sd_eff']
+        else:
+            pooled_cv = summary_df.loc['random effect', 'eff']
+            pooled_sd = summary_df.loc['random effect', 'sd_eff']
         
         pooled_estimates.append(pooled_cv)  # mean after combine
-        pooled_se.append(pooled_sd/np.sqrt(len(effects)-1))  # SE after combine
+        pooled_se.append(pooled_sd/np.sqrt(len(effects)))  # SE after combine
         
 
     # calculate the pooled CV and SE after 500 iterations
-    mean_pooled_cv = np.mean(pooled_estimates)
-    mean_pooled_se = np.mean(pooled_se)
+    mean_pooled_cv = np.nanmean(pooled_estimates)
+    mean_pooled_se = np.nanmean(pooled_se)
 
     # calculate 95% CI
     ci_low = mean_pooled_cv - 1.96 * mean_pooled_se
@@ -127,6 +133,7 @@ def REM_ICC(df, effect_name='ICC'):
     # output
     print(f"Pooled ICC = {pooled_icc:.4f}")
     print(f"95% CI = ({pooled_ci_low:.4f}, {pooled_ci_high:.4f})")
+    return pooled_icc, pooled_ci_low, pooled_ci_high
 
 def REM_Kappa(df, effect_name='Kappa'):
     '''
@@ -178,6 +185,7 @@ def REM_Kappa(df, effect_name='Kappa'):
     # output
     print(f"Pooled Kappa = {pooled_kappa:.4f}")
     print(f"95% CI = ({pooled_ci_low:.4f}, {pooled_ci_high:.4f})")
+    return pooled_kappa,pooled_ci_low, pooled_ci_high
 
 def REM_CV(df, effect_name='CV'):
     '''
@@ -229,7 +237,7 @@ def REM_CV(df, effect_name='CV'):
     # output
     print(f"Pooled CV = {pooled_cv:.4f}")
     print(f"95% CI = ({pooled_ci_low:.4f}, {pooled_ci_high:.4f})")
-
+    return pooled_cv, pooled_ci_low, pooled_ci_high
 
 def REM_SRM(df, effect_name='SRM'):
     '''
@@ -267,7 +275,7 @@ def REM_SRM(df, effect_name='SRM'):
     # output
     print(f"Pooled SRM = {pooled_srm:.4f}")
     print(f"95% CI = ({srm_ci_low:.4f}, {srm_ci_high:.4f})")
-    
+    return pooled_srm, srm_ci_low, srm_ci_high
     
 
 def fisher_z(r):
@@ -328,7 +336,7 @@ def get_value_and_se(df,effect_name):
     #value[mask] = (value_lowlim[mask] + value_uplim[mask]) / 2
     df.loc[mask, value_cn] = (df.loc[mask, value_lowlim_cn] + df.loc[mask, value_uplim_cn]) / 2
     
-    if effect_name=='ICC':
+    if effect_name=='ICC' or effect_name=='Kappa': # kappa=1 will cause error in fisher z transform
         query = df[value_cn]==1
         df.loc[query, value_cn] = 0.999 # icc=1 will cause estimate se=0, try to avoid it
     
@@ -372,7 +380,7 @@ def estimate_se_from_samplesize(data_type, value, sample_size,rater=None):
         se = np.sqrt(1/sample_size + value**2/(2*sample_size))
     
     if data_type == 'CV':
-        se = np.sqrt(1/(2*(sample_size - 1))) * 100 # percentage
+        se = np.sqrt(1/(2*(sample_size - 1))) *100 # percentage
     
     if data_type == 'Kappa':
         se = (1- value**2)/np.sqrt(sample_size)
@@ -426,3 +434,114 @@ def estimate_se_from_effect(df, effect_name):
     # Create new SE column
     df[f"{effect_name}_SE_final"] = df.apply(get_se, axis=1)
     return df
+
+
+def one_study_result(df,effect_name):
+    '''
+    if one table only have one study, then use this to get mean and CI
+
+    Parameters
+    ----------
+    df : pd.dataframe
+        dataframe for the data.
+    effect_name : str
+        effect name
+
+    Returns
+    -------
+    None.
+
+    '''
+    
+    
+    
+    df = get_value_and_se(df=df,effect_name=effect_name)
+    
+    value_cn = f"{effect_name}_value"
+    value = df[value_cn+'_final']
+    se_cn = f"{effect_name}_SE_final"
+    se = df[se_cn]
+    
+    if len(value)<=3: # if number of estimates too small, get_mean_and_CI() will be wrong
+        value = np.mean(value)
+        se = np.mean(se)
+        if effect_name == 'ICC' or effect_name =='Kappa':
+            z = fisher_z(value)
+            z_se = se_fisher_z(r=value, se_r=se)
+            
+            # 95% CI in Z space
+            #z_crit = norm.ppf(0.975)
+            z_lower = z - 1.96 * z_se
+            z_upper = z + 1.96 * z_se
+            
+            ci_lower = inverse_fisher_z(z_lower)
+            ci_upper = inverse_fisher_z(z_upper)
+            mean = value
+        elif effect_name == 'CV':
+            z = log_cv(value)
+            z_se = se_log_cv(cv=value, se_cv=se)
+            
+            z_lower = z - 1.96 * z_se
+            z_upper = z + 1.96 * z_se
+            
+            ci_lower = inverse_log_cv(z_lower)
+            ci_upper = inverse_log_cv(z_upper)
+            mean = value
+            
+            
+        elif effect_name == 'SRM':
+            ci_lower = value - 1.96 * se
+            ci_upper = value + 1.96 * se
+            mean = value
+        
+        ci_lower = ci_lower
+        ci_upper = ci_upper
+        print(f"Mean {effect_name}: {mean:.4f}")
+        print(f"95% CI: ({ci_lower:.4f}, {ci_upper:.4f})")
+        
+        return mean, ci_lower, ci_upper
+    
+    
+    if effect_name == 'ICC' or effect_name == 'Kappa':
+        
+        # transform
+        z = fisher_z(r=value)
+        
+        mean_z, ci_lower_z, ci_upper_z = get_mean_and_CI(z)
+        
+        # back-transform
+        mean = inverse_fisher_z(mean_z)
+        ci_lower = inverse_fisher_z(ci_lower_z)
+        ci_upper = inverse_fisher_z(ci_upper_z)
+        
+        
+    elif effect_name == 'CV':
+        # transform
+        cv_trans = log_cv(value)
+        mean_z, ci_lower_z, ci_upper_z = get_mean_and_CI(cv_trans)
+        
+        # back-transform
+        mean = inverse_log_cv(mean_z)
+        ci_lower = inverse_log_cv(ci_lower_z)
+        ci_upper = inverse_log_cv(ci_upper_z)
+    elif effect_name == 'SRM':
+        mean, ci_lower, ci_upper = get_mean_and_CI(value)
+        
+    print(f"Mean {effect_name}: {mean:.4f}")
+    print(f"95% CI: ({ci_lower:.4f}, {ci_upper:.4f})")
+    return mean, ci_lower, ci_upper
+        
+def get_mean_and_CI(data):
+    # Calculate mean
+    mean = np.mean(data)
+    
+    # 95% confidence interval
+    confidence = 0.95
+    n = len(data)
+    se = stats.sem(data)  # Standard error of the mean
+    h = se * stats.t.ppf((1 + confidence) / 2., n-1)  # Margin of error using t-distribution
+    
+    ci_lower = mean - h
+    ci_upper = mean + h
+    
+    return mean, ci_lower, ci_upper
