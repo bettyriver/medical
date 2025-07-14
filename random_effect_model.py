@@ -51,7 +51,7 @@ def random_effect_model(df,value_cname,se_cname,study_cname='Number'):
         
         meta_result = combine_effects(effect=effects, variance=variances, method_re="dl")
         summary_df = meta_result.summary_frame()
-        if len(effects)<=3:
+        if len(effects)<=4: # there is case when n=4, randon effect give nan error
             pooled_cv = summary_df.loc['fixed effect', 'eff']
             pooled_sd = summary_df.loc['fixed effect', 'sd_eff']
         else:
@@ -400,7 +400,7 @@ def estimate_se_from_effect(df, effect_name):
     se_col = f"{effect_name}_SE"
     ci_low_col = f"{effect_name}_LCL"
     ci_high_col = f"{effect_name}_UCL"
-    sd_col = f"{effect_name}_SE"
+    sd_col = f"{effect_name}_SD"
     samplesize_col = f"{effect_name}_sample_size"
 
     def get_se(row):
