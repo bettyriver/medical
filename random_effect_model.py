@@ -10,6 +10,8 @@ from statsmodels.stats.meta_analysis import combine_effects
 import pandas as pd
 import scipy.stats as stats
 from scipy.stats import norm
+import pymc as pm
+import arviz as az
 
 def random_effect_model(df,value_cname,se_cname,study_cname='Number'):
     '''
@@ -45,21 +47,29 @@ def random_effect_model(df,value_cname,se_cname,study_cname='Number'):
         variances = se**2  # no se available, simply use the same variances
 
         # note: variance = SE^2, SE = SD/sqrt(n-1)
-
         
         # use DerSimonian-Laird to perform random effect combine
         
-        meta_result = combine_effects(effect=effects, variance=variances, method_re="dl")
+        meta_result = combine_effects(effect=effects, variance=variances, method_re="iterated")
         summary_df = meta_result.summary_frame()
+        
         if len(effects)<=4: # there is case when n=4, randon effect give nan error
             pooled_cv = summary_df.loc['fixed effect', 'eff']
             pooled_sd = summary_df.loc['fixed effect', 'sd_eff']
+
+            
+        
         else:
+            
             pooled_cv = summary_df.loc['random effect', 'eff']
             pooled_sd = summary_df.loc['random effect', 'sd_eff']
         
-        pooled_estimates.append(pooled_cv)  # mean after combine
-        pooled_se.append(pooled_sd/np.sqrt(len(effects)))  # SE after combine
+        if np.isfinite(pooled_cv) & np.isfinite(pooled_sd):
+        
+            pooled_estimates.append(pooled_cv)  # mean after combine
+            pooled_se.append(pooled_sd/np.sqrt(len(effects)))  # SE after combine
+        else:
+            continue
         
 
     # calculate the pooled CV and SE after 500 iterations
