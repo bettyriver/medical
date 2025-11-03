@@ -356,8 +356,16 @@ def get_value_and_se(df,effect_name):
     
     return df
     
+def create_table_for_R(df,effect_name,savepath=None):
+    df = get_value_and_se(df=df, effect_name=effect_name)
+    df["effect_id"] = df.groupby("Number").cumcount() + 1
+    df["effect_id"] = df["Number"].astype(str) + "_E" + df["effect_id"].astype(str)
     
     
+    if savepath is not None:
+        df.to_csv(savepath)
+    
+    return df
 
 def estimate_se_from_samplesize(data_type, value, sample_size,rater=None):
     '''
