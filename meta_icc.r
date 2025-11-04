@@ -135,3 +135,22 @@ print(icc_summary)
 # Optional: write results
 write.csv(icc_summary, "/Users/ymai0110/Documents/medical_data/R/Rtable_Nov02/result_table4.csv", row.names = FALSE)
 
+# FNIH
+excel_path <- "/Users/ymai0110/Documents/medical_data/R/Rtable_Nov02/FNIH ICC.xlsx"
+sheets <- readxl::excel_sheets(excel_path)
+sheets
+icc_summary   <- purrr::map_dfr(sheets, ~analyze_sheet_icc(.x))
+
+print(icc_summary)
+# Optional: write results
+write.csv(icc_summary, "/Users/ymai0110/Documents/medical_data/R/Rtable_Nov02/result_FNIHICC.csv", row.names = FALSE)
+
+# treatment
+excel_path <- "/Users/ymai0110/Documents/medical_data/R/Rtable_Nov02/treatment ICC.xlsx"
+sheets <- readxl::excel_sheets(excel_path)
+sheets
+icc_summary   <- purrr::map_dfr(sheets, ~analyze_sheet_icc(.x))
+
+print(icc_summary)
+# Optional: write results
+write.csv(icc_summary, "/Users/ymai0110/Documents/medical_data/R/Rtable_Nov02/result_treatmemtICC.csv", row.names = FALSE)

@@ -142,3 +142,20 @@ summary_tbl_srm <- purrr::map_dfr(sheets, analyze_sheet_srm)
 print(summary_tbl_srm)
 write.csv(summary_tbl_srm, "/Users/ymai0110/Documents/medical_data/R/Rtable_Nov02/result_Table10.csv", row.names = FALSE)
 
+# FNIH
+
+excel_path <- "/Users/ymai0110/Documents/medical_data/R/Rtable_Nov02/FNIH SRM.xlsx"
+sheets <- readxl::excel_sheets(excel_path)
+sheets
+summary_tbl_srm <- purrr::map_dfr(sheets, analyze_sheet_srm)
+print(summary_tbl_srm)
+write.csv(summary_tbl_srm, "/Users/ymai0110/Documents/medical_data/R/Rtable_Nov02/result_FNIHSRM.csv", row.names = FALSE)
+
+# treatment
+
+excel_path <- "/Users/ymai0110/Documents/medical_data/R/Rtable_Nov02/treatment SRM.xlsx"
+sheets <- readxl::excel_sheets(excel_path)
+sheets
+summary_tbl_srm <- purrr::map_dfr(sheets, analyze_sheet_srm)
+print(summary_tbl_srm)
+write.csv(summary_tbl_srm, "/Users/ymai0110/Documents/medical_data/R/Rtable_Nov02/result_treatmentSRM.csv", row.names = FALSE)

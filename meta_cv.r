@@ -115,3 +115,10 @@ summary_tbl <- purrr::map_dfr(sheets, analyze_sheet)
 print(summary_tbl)
 write.csv(summary_tbl, "/Users/ymai0110/Documents/medical_data/R/Rtable_Nov02/result_Table2.csv", row.names = FALSE)
 
+# FNIH
+excel_path <- "/Users/ymai0110/Documents/medical_data/R/Rtable_Nov02/FNIH CV.xlsx"   # e.g., "/path/to/Table2.xlsx"
+sheets <- readxl::excel_sheets(excel_path)
+sheets
+summary_tbl <- purrr::map_dfr(sheets, analyze_sheet)
+print(summary_tbl)
+write.csv(summary_tbl, "/Users/ymai0110/Documents/medical_data/R/Rtable_Nov02/result_FNIHCV.csv", row.names = FALSE)

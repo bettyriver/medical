@@ -131,10 +131,24 @@ excel_path <- "/Users/ymai0110/Documents/medical_data/R/Rtable_Nov02/Table 6.xls
 sheets <- readxl::excel_sheets(excel_path)
 sheets
 kappa_summary <- purrr::map_dfr(sheets, ~analyze_sheet_kappa(.x))
-
-
 print(kappa_summary)
-
 # Optional: write results
 write.csv(kappa_summary, "/Users/ymai0110/Documents/medical_data/R/Rtable_Nov02/result_table6.csv", row.names = FALSE)
 
+# FNIH
+excel_path <- "/Users/ymai0110/Documents/medical_data/R/Rtable_Nov02/FNIH Kappa.xlsx"
+sheets <- readxl::excel_sheets(excel_path)
+sheets
+kappa_summary <- purrr::map_dfr(sheets, ~analyze_sheet_kappa(.x))
+print(kappa_summary)
+# Optional: write results
+write.csv(kappa_summary, "/Users/ymai0110/Documents/medical_data/R/Rtable_Nov02/result_FNIHKappa.csv", row.names = FALSE)
+
+# FNIH
+excel_path <- "/Users/ymai0110/Documents/medical_data/R/Rtable_Nov02/treatment Kappa.xlsx"
+sheets <- readxl::excel_sheets(excel_path)
+sheets
+kappa_summary <- purrr::map_dfr(sheets, ~analyze_sheet_kappa(.x))
+print(kappa_summary)
+# Optional: write results
+write.csv(kappa_summary, "/Users/ymai0110/Documents/medical_data/R/Rtable_Nov02/result_treatmentKappa.csv", row.names = FALSE)
