@@ -135,7 +135,7 @@ analyze_sheet_srm_meta <- function(sheet_name, path = excel_path, standard_month
   # 3) Duration-standardized prediction at standard_months
   # For rma.mv with moderators, use predict(newmods=...) to obtain adjusted estimate at chosen covariate value [web:1][web:11][web:17][web:20]
   adj_pred <- predict_safe(m1, newmods_mat = newmods_std)  # [web:1][web:11][web:20]
-  
+  V_sampling   <- mean(df$vi)
   # Collate output
   tibble(
     sheet          = sheet_name,
@@ -146,8 +146,8 @@ analyze_sheet_srm_meta <- function(sheet_name, path = excel_path, standard_month
     uci            = ci0["upper"],
     tau2_between   = m0$sigma2[1],
     sigma2_within  = m0$sigma2[2],
-    I2_studylevel_perc  = 100*m0$sigma2[1]/(m0$sigma2[1]+m0$sigma2[2]+1),
-    I2_withinstudy_perc = 100*m0$sigma2[2]/(m0$sigma2[1]+m0$sigma2[2]+1),
+    I2_studylevel_perc  = 100*m0$sigma2[1]/(m0$sigma2[1]+m0$sigma2[2]+V_sampling),
+    I2_withinstudy_perc = 100*m0$sigma2[2]/(m0$sigma2[1]+m0$sigma2[2]+V_sampling),
     used_crve      = used_crve0,
     used_crve_meta_reg = used_crve1,
     meta_reg_coef_duration = b1,
@@ -169,5 +169,5 @@ summary_tbl_srm_meta <- purrr::map_dfr(sheets, ~analyze_sheet_srm_meta(.x, path 
 print(summary_tbl_srm_meta)
 
 # Save CSV
-out_csv <- "/Users/ymai0110/Documents/medical_data/R/Rtable_Nov02/result_Table10_metaregression.csv"
+out_csv <- "/Users/ymai0110/Documents/medical_data/R/Rtable_Nov02/result_v2/result_Table10_metaregression.csv"
 write.csv(summary_tbl_srm_meta, out_csv, row.names = FALSE)
